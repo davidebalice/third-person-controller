@@ -6,6 +6,7 @@ import walls from "./walls";
 
 const Character = ({ cameraRef }) => {
   // Caricamento del modello e delle animazioni
+  const speed = 0.05;
   const [blockedUp, setBlockedUp] = useState(false);
   const [blockedDown, setBlockedDown] = useState(false);
   const [blockedLeft, setBlockedLeft] = useState(false);
@@ -13,7 +14,7 @@ const Character = ({ cameraRef }) => {
   const model = useFBX("/models/character.fbx");
   const idleAnim = useFBX("/animations/idle.fbx");
   const walkAnim = useFBX("/animations/walk.fbx");
-
+  const keyUpEvent = new KeyboardEvent("keyup", { key: event.key });
   // Riferimenti e stati
   const mixerRef = useRef(null);
   const actionsRef = useRef({});
@@ -22,16 +23,17 @@ const Character = ({ cameraRef }) => {
   const velocity = useRef(new THREE.Vector3()); // Velocità del movimento
   const direction = useRef(new THREE.Vector3()); // Direzione del movimento
   const collisionBox = useRef(); // Box di collisione
-  const collisionBoxGeometry = new THREE.BoxGeometry(0.7, 1.8, 0.5); // Dimensioni realistiche del personaggio
+  const collisionBoxGeometry = new THREE.BoxGeometry(0.5, 1.8, 0.2); // Dimensioni box collisione
   const collisionBoxMaterial = new THREE.MeshBasicMaterial({
     transparent: true, // Abilita la trasparenza
     opacity: 1,
     wireframe: true, // Per visualizzare la rete wireframe
   });
-
+  /*
   // Funzione per il controllo delle collisioni
   const checkCollision = (movement) => {
     // Crea un Box3 per il personaggio
+    collisionBox.current.updateMatrixWorld(true);
     const characterBox = new THREE.Box3().setFromObject(collisionBox.current);
 
     // Verifica la collisione con ciascun muro
@@ -40,44 +42,19 @@ const Character = ({ cameraRef }) => {
         return true; // Collisione trovata
       }
     }
+
     return false; // Nessuna collisione
   };
+*/
 
   /*
-  const checkCollision = (movement) => {
-    if (!characterRef.current) {
-      console.error("Character reference not defined.");
-      return false;
-    }
-    if (!walls || walls.length === 0) {
-      console.error("No walls to check collision.");
-      return false;
-    }
-
-    // Crea un raggio dalla posizione del personaggio nella direzione del movimento
-    const rayOrigin = new THREE.Vector3().copy(characterRef.current.position);
-    const rayDirection = new THREE.Vector3().copy(movement).normalize();
-
-    // Crea il raycaster con origine e direzione
-    const raycaster = new THREE.Raycaster(rayOrigin, rayDirection, 0, 1); // 0 per la distanza minima e 1 per la distanza massima
-    const intersects = raycaster.intersectObjects(walls);
-
-    return intersects.length > 0; // Se il raggio colpisce un muro, ritorna true
-  };
-*/
-  // Imposta la posizione del box di collisione ogni volta che cambia la posizione del modello
-  useEffect(() => {
-    if (collisionBox.current && characterRef.current) {
-      collisionBox.current.position.copy(characterRef.current.position);
-    }
-  }, [characterRef.current?.position]);
-
   const resetBlock = () => {
     setBlockedUp(false);
     setBlockedDown(false);
     setBlockedLeft(false);
     setBlockedRight(false);
   };
+*/
 
   // Caricamento e configurazione delle animazioni del modello
   useEffect(() => {
@@ -137,74 +114,44 @@ const Character = ({ cameraRef }) => {
   }, []);
 
   useFrame(() => {
-    let movement = new THREE.Vector3();
-    movement.set(velocity.current.x, velocity.current.y, velocity.current.z);
+    if (!characterRef.current) return;
 
-    if (direction.current.z > 0) {
-      console.log("sopra");
-      // Il player si sta muovendo avanti (sopra)
-      if (checkCollision(new THREE.Vector3(0, 0, 1))) {
-        setBlockedUp(true);
-      } else {
-        if (blockedDown) {
-          resetBlock();
-        }
+    // Aggiorna la collision box
+    collisionBox.current.updateMatrixWorld(true);
+    const characterBox = new THREE.Box3().setFromObject(collisionBox.current);
+
+    let isBlocked = { up: false, down: false, left: false, right: false };
+
+    for (const wall of walls) {
+      if (characterBox.intersectsBox(wall)) {
+        if (direction.current.z > 0) isBlocked.up = true;
+        if (direction.current.z < 0) isBlocked.down = true;
+        if (direction.current.x > 0) isBlocked.left = true;
+        if (direction.current.x < 0) isBlocked.right = true;
       }
     }
 
-    if (direction.current.z < 0) {
-      console.log("sotto");
-      // Il player si sta muovendo indietro (sotto)
-      if (checkCollision(new THREE.Vector3(0, 0, -1))) {
-        console.log("collisione sotto");
-        setBlockedDown(true);
-      } else {
-        if (blockedUp) {
-          resetBlock();
-        }
-      }
+    setBlockedUp(isBlocked.up);
+    setBlockedDown(isBlocked.down);
+    setBlockedLeft(isBlocked.left);
+    setBlockedRight(isBlocked.right);
+
+    // Se bloccato, ferma il movimento
+    if (isBlocked.up || isBlocked.down || isBlocked.left || isBlocked.right) {
+     velocity.current.set(0, 0, 0);
     }
 
-    if (direction.current.x < 0) {
-      console.log("destra");
-      // Il player si sta muovendo a destra
-      if (checkCollision(new THREE.Vector3(1, 0, 0))) {
-        console.log("collsiione destra");
-        setBlockedRight(true);
-      } else {
-        if (blockedLeft) {
-          resetBlock();
-        }
-      }
-    }
+// Aggiorna la posizione solo se non ci sono blocchi
+//characterRef.current.position.add(velocity.current);
 
-    if (direction.current.x > 0) {
-      // Il player si sta muovendo a sinistra
-      console.log("sinistra");
-      if (checkCollision(new THREE.Vector3(-1, 0, 0))) {
-        console.log("collsiione sinistra");
-        setBlockedLeft(true);
-        console.log("collision");
-      } else {
-        if (blockedRight) {
-          resetBlock();
-        }
-      }
-    }
 
-    // Gestione animazioni
-    if (
-      (movement.x !== 0 || movement.z !== 0) &&
-      currentAction !== actionsRef.current.walk
-    ) {
-      setCurrentAction(actionsRef.current.walk);
-    } else if (
-      movement.x === 0 &&
-      movement.z === 0 &&
-      currentAction !== actionsRef.current.idle
-    ) {
-      setCurrentAction(actionsRef.current.idle);
-    }
+/*
+    // Aggiorna la posizione solo se non ci sono blocchi
+    characterRef.current.position.add(velocity.current);
+    characterRef.current.rotation.y = Math.atan2(
+      direction.current.x,
+      direction.current.z
+    );*/
   });
 
   // Gestione dei movimenti con i tasti
@@ -214,30 +161,36 @@ const Character = ({ cameraRef }) => {
 
       // Imposta la direzione in base al tasto premuto
       if (!blockedUp && (event.key === "w" || event.key === "ArrowUp")) {
-        movement.set(0, 0, 0.05); // Movimento in avanti (positiva Z)
+        movement.set(0, 0, speed); // Movimento in avanti (positiva Z)
       } else if (
         !blockedDown &&
         (event.key === "s" || event.key === "ArrowDown")
       ) {
-        movement.set(0, 0, -0.05); // Movimento indietro (negativa Z)
+        movement.set(0, 0, -speed); // Movimento indietro (negativa Z)
       } else if (
         !blockedLeft &&
         (event.key === "a" || event.key === "ArrowLeft")
       ) {
-        movement.set(0.05, 0, 0); // Movimento a sinistra (positiva X)
+        movement.set(speed, 0, 0); // Movimento a sinistra (positiva X)
       } else if (
         !blockedRight &&
         (event.key === "d" || event.key === "ArrowRight")
       ) {
-        movement.set(-0.05, 0, 0); // Movimento a destra (negativa X)
+        movement.set(-speed, 0, 0); // Movimento a destra (negativa X)
       }
-
+      /*
       // Controllo delle collisioni
-
       if (checkCollision(movement)) {
         const keyUpEvent = new KeyboardEvent("keyup", { key: event.key });
         window.dispatchEvent(keyUpEvent);
       }
+*/
+
+      /*
+      if (!checkCollision(movement)) {
+        velocity.current.copy(movement);
+      }
+*/
 
       // Imposta la direzione e la velocità
       if (movement.x !== 0) {
@@ -251,6 +204,7 @@ const Character = ({ cameraRef }) => {
       // Cambia l'animazione in camminata
       if (currentAction !== actionsRef.current.walk) {
         setCurrentAction(actionsRef.current.walk); // Animazione camminata
+        //actionsRef.current.walk.reset().fadeIn(0.2).play();
       }
     };
 
@@ -300,15 +254,66 @@ const Character = ({ cameraRef }) => {
         );
         cameraRef.current.lookAt(characterRef.current.position);
       }
+
+      //rayOrigin.copy(characterRef.current.position); // Origine del raggio
+      //raycaster.set(rayOrigin, direction);
     }
 
     if (collisionBox.current && characterRef.current) {
       collisionBox.current.position.copy(characterRef.current.position);
-      collisionBox.current.position.set(
-        characterRef.current.position.x,
-        characterRef.current.position.y + 1,
-        characterRef.current.position.z
-      );
+
+      if (direction.current.z > 0) {
+        console.log("sopra");
+
+        collisionBox.current.position.set(
+          characterRef.current.position.x,
+          characterRef.current.position.y + 1,
+          characterRef.current.position.z + 0.5
+        );
+        const scaleX = 0.5;
+        const scaleY = 1;
+        const scaleZ = 2;
+        collisionBox.current.scale.set(scaleX, scaleY, scaleZ);
+      }
+
+      if (direction.current.z < 0) {
+        console.log("sotto");
+        collisionBox.current.position.set(
+          characterRef.current.position.x,
+          characterRef.current.position.y + 1,
+          characterRef.current.position.z - 0.5
+        );
+        const scaleX = 0.5;
+        const scaleY = 1;
+        const scaleZ = 2;
+        collisionBox.current.scale.set(scaleX, scaleY, scaleZ);
+      }
+
+      if (direction.current.x < 0) {
+        console.log("destra");
+        collisionBox.current.position.set(
+          characterRef.current.position.x - 0.5,
+          characterRef.current.position.y + 1,
+          characterRef.current.position.z
+        );
+        const scaleX = 1;
+        const scaleY = 1;
+        const scaleZ = 1;
+        collisionBox.current.scale.set(scaleX, scaleY, scaleZ);
+      }
+
+      if (direction.current.x > 0) {
+        console.log("sinistra");
+        collisionBox.current.position.set(
+          characterRef.current.position.x + 0.5,
+          characterRef.current.position.y + 1,
+          characterRef.current.position.z
+        );
+        const scaleX = 1;
+        const scaleY = 1;
+        const scaleZ = 1;
+        collisionBox.current.scale.set(scaleX, scaleY, scaleZ);
+      }
     }
   });
 

@@ -1268,8 +1268,8 @@ prop-types@^15.6.0, prop-types@^15.8.1:
     object-assign "^4.1.1"
     react-is "^16.13.1"
 
-"r3f-vite-starter@file:":
-  version "1.0.0"
+"r3f-third-person-controller@file:":
+  version "0.8.0"
   resolved "file:"
   dependencies:
     "@react-three/drei" "^9.75.0"
@@ -1277,6 +1277,22 @@ prop-types@^15.6.0, prop-types@^15.8.1:
     "@react-three/rapier" "^1.4.0"
     "@types/three" "0.152.1"
     leva "^0.9.35"
+    r3f-third-person-controller "file:"
+    r3f-vite-starter "file:"
+    react "^18.2.0"
+    react-dom "^18.2.0"
+    three "^0.153.0"
+
+"r3f-vite-starter@file:":
+  version "0.8.0"
+  resolved "file:"
+  dependencies:
+    "@react-three/drei" "^9.75.0"
+    "@react-three/fiber" "^8.13.3"
+    "@react-three/rapier" "^1.4.0"
+    "@types/three" "0.152.1"
+    leva "^0.9.35"
+    r3f-third-person-controller "file:"
     r3f-vite-starter "file:"
     react "^18.2.0"
     react-dom "^18.2.0"
