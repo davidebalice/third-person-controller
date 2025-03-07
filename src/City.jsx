@@ -1,9 +1,9 @@
-import { Environment, useGLTF } from "@react-three/drei";
+import { Environment, useGLTF, useProgress } from "@react-three/drei";
+import React, { useEffect } from "react";
 
-
-export default function City({}) {
+export default function City({ setLoading }) {
   const city = useGLTF("./models/city.gltf");
-/*
+
   const { progress } = useProgress();
 
   useEffect(() => {
@@ -11,7 +11,7 @@ export default function City({}) {
       setLoading(false);
     }
   }, [progress]);
-*/
+
   return (
     <>
       <Environment preset="warehouse" />
@@ -28,6 +28,3 @@ export default function City({}) {
     </>
   );
 }
-
-
-

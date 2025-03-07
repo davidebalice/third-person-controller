@@ -6,6 +6,7 @@ import walls from "./walls";
 
 const Character = ({ cameraRef }) => {
   // Caricamento del modello e delle animazioni
+  const touchStartRef = useRef(null);
   const speed = 0.05;
   const [blockedUp, setBlockedUp] = useState(false);
   const [blockedDown, setBlockedDown] = useState(false);
@@ -14,8 +15,6 @@ const Character = ({ cameraRef }) => {
   const model = useFBX("/models/character.fbx");
   const idleAnim = useFBX("/animations/idle.fbx");
   const walkAnim = useFBX("/animations/walk.fbx");
-  const keyUpEvent = new KeyboardEvent("keyup", { key: event.key });
-  // Riferimenti e stati
   const mixerRef = useRef(null);
   const actionsRef = useRef({});
   const [currentAction, setCurrentAction] = useState(null);
@@ -29,32 +28,6 @@ const Character = ({ cameraRef }) => {
     opacity: 1,
     wireframe: true, // Per visualizzare la rete wireframe
   });
-  /*
-  // Funzione per il controllo delle collisioni
-  const checkCollision = (movement) => {
-    // Crea un Box3 per il personaggio
-    collisionBox.current.updateMatrixWorld(true);
-    const characterBox = new THREE.Box3().setFromObject(collisionBox.current);
-
-    // Verifica la collisione con ciascun muro
-    for (const wall of walls) {
-      if (characterBox.intersectsBox(wall)) {
-        return true; // Collisione trovata
-      }
-    }
-
-    return false; // Nessuna collisione
-  };
-*/
-
-  /*
-  const resetBlock = () => {
-    setBlockedUp(false);
-    setBlockedDown(false);
-    setBlockedLeft(false);
-    setBlockedRight(false);
-  };
-*/
 
   // Caricamento e configurazione delle animazioni del modello
   useEffect(() => {
@@ -138,20 +111,8 @@ const Character = ({ cameraRef }) => {
 
     // Se bloccato, ferma il movimento
     if (isBlocked.up || isBlocked.down || isBlocked.left || isBlocked.right) {
-     velocity.current.set(0, 0, 0);
+      velocity.current.set(0, 0, 0);
     }
-
-// Aggiorna la posizione solo se non ci sono blocchi
-//characterRef.current.position.add(velocity.current);
-
-
-/*
-    // Aggiorna la posizione solo se non ci sono blocchi
-    characterRef.current.position.add(velocity.current);
-    characterRef.current.rotation.y = Math.atan2(
-      direction.current.x,
-      direction.current.z
-    );*/
   });
 
   // Gestione dei movimenti con i tasti
@@ -178,19 +139,6 @@ const Character = ({ cameraRef }) => {
       ) {
         movement.set(-speed, 0, 0); // Movimento a destra (negativa X)
       }
-      /*
-      // Controllo delle collisioni
-      if (checkCollision(movement)) {
-        const keyUpEvent = new KeyboardEvent("keyup", { key: event.key });
-        window.dispatchEvent(keyUpEvent);
-      }
-*/
-
-      /*
-      if (!checkCollision(movement)) {
-        velocity.current.copy(movement);
-      }
-*/
 
       // Imposta la direzione e la velocità
       if (movement.x !== 0) {
@@ -246,7 +194,11 @@ const Character = ({ cameraRef }) => {
       //offset camera top
       //const offset = new THREE.Vector3(0, 50, -11);
       //offset camera scene
-      const offset = new THREE.Vector3(0, 10, -11);
+      //const offset = new THREE.Vector3(0, 10, -11);
+
+      //offset test
+      const offset = new THREE.Vector3(0, 4, -9);
+
       if (cameraRef.current) {
         cameraRef.current.position.lerp(
           characterRef.current.position.clone().add(offset),
@@ -254,9 +206,6 @@ const Character = ({ cameraRef }) => {
         );
         cameraRef.current.lookAt(characterRef.current.position);
       }
-
-      //rayOrigin.copy(characterRef.current.position); // Origine del raggio
-      //raycaster.set(rayOrigin, direction);
     }
 
     if (collisionBox.current && characterRef.current) {
@@ -268,11 +217,11 @@ const Character = ({ cameraRef }) => {
         collisionBox.current.position.set(
           characterRef.current.position.x,
           characterRef.current.position.y + 1,
-          characterRef.current.position.z + 0.5
+          characterRef.current.position.z + 0.4
         );
         const scaleX = 0.5;
         const scaleY = 1;
-        const scaleZ = 2;
+        const scaleZ = 1;
         collisionBox.current.scale.set(scaleX, scaleY, scaleZ);
       }
 
@@ -281,22 +230,22 @@ const Character = ({ cameraRef }) => {
         collisionBox.current.position.set(
           characterRef.current.position.x,
           characterRef.current.position.y + 1,
-          characterRef.current.position.z - 0.5
+          characterRef.current.position.z - 0.4
         );
         const scaleX = 0.5;
         const scaleY = 1;
-        const scaleZ = 2;
+        const scaleZ = 1;
         collisionBox.current.scale.set(scaleX, scaleY, scaleZ);
       }
 
       if (direction.current.x < 0) {
         console.log("destra");
         collisionBox.current.position.set(
-          characterRef.current.position.x - 0.5,
+          characterRef.current.position.x - 0.4,
           characterRef.current.position.y + 1,
           characterRef.current.position.z
         );
-        const scaleX = 1;
+        const scaleX = 0.5;
         const scaleY = 1;
         const scaleZ = 1;
         collisionBox.current.scale.set(scaleX, scaleY, scaleZ);
@@ -305,17 +254,77 @@ const Character = ({ cameraRef }) => {
       if (direction.current.x > 0) {
         console.log("sinistra");
         collisionBox.current.position.set(
-          characterRef.current.position.x + 0.5,
+          characterRef.current.position.x + 0.4,
           characterRef.current.position.y + 1,
           characterRef.current.position.z
         );
-        const scaleX = 1;
+        const scaleX = 0.5;
         const scaleY = 1;
         const scaleZ = 1;
         collisionBox.current.scale.set(scaleX, scaleY, scaleZ);
       }
     }
   });
+
+  // 💡 AGGIUNGI SUPPORTO TOUCH 💡
+  useEffect(() => {
+    const handleTouchStart = (event) => {
+      if (event.touches.length === 1) {
+        touchStartRef.current = {
+          x: event.touches[0].clientX,
+          y: event.touches[0].clientY,
+        };
+      }
+    };
+
+    const handleTouchMove = (event) => {
+      if (!touchStartRef.current || event.touches.length !== 1) return;
+
+      const touch = event.touches[0];
+      const deltaX = touch.clientX - touchStartRef.current.x;
+      const deltaY = touch.clientY - touchStartRef.current.y;
+
+      let movement = new THREE.Vector3();
+
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        if (deltaX > 20 && !blockedRight) {
+          movement.set(-speed, 0, 0);
+        } else if (deltaX < -20 && !blockedLeft) {
+          movement.set(speed, 0, 0);
+        }
+      } else {
+        if (deltaY > 20 && !blockedDown) {
+          movement.set(0, 0, -speed);
+        } else if (deltaY < -20 && !blockedUp) {
+          movement.set(0, 0, speed);
+        }
+      }
+
+      velocity.current.set(movement.x, 0, movement.z);
+      direction.current.set(movement.x, 0, movement.z);
+
+      if (currentAction !== actionsRef.current.walk) {
+        setCurrentAction(actionsRef.current.walk);
+      }
+    };
+
+    const handleTouchEnd = () => {
+      velocity.current.set(0, 0, 0);
+      if (currentAction !== actionsRef.current.idle) {
+        setCurrentAction(actionsRef.current.idle);
+      }
+    };
+
+    window.addEventListener("touchstart", handleTouchStart);
+    window.addEventListener("touchmove", handleTouchMove);
+    window.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [currentAction, blockedUp, blockedDown, blockedLeft, blockedRight]);
 
   return (
     <>
