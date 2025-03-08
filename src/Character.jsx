@@ -4,28 +4,50 @@ import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import walls from "./walls";
 
-const Character = ({ cameraRef }) => {
-  // Caricamento del modello e delle animazioni
+const Character = ({
+  cameraRef,
+  cameraPositions,
+  cameraIndex,
+  setCameraIndex,
+  animation,
+  setAnimation,
+}) => {
   const touchStartRef = useRef(null);
   const speed = 0.05;
   const [blockedUp, setBlockedUp] = useState(false);
   const [blockedDown, setBlockedDown] = useState(false);
   const [blockedLeft, setBlockedLeft] = useState(false);
   const [blockedRight, setBlockedRight] = useState(false);
+  const [currentAction, setCurrentAction] = useState(null);
+  // Caricamento del modello del personaggio
   const model = useFBX("/models/character.fbx");
+  //caricamento animazioni
   const idleAnim = useFBX("/animations/idle.fbx");
   const walkAnim = useFBX("/animations/walk.fbx");
+  const greetingsAnim = useFBX("/animations/greetings.fbx");
+  const danceAnim = useFBX("/animations/dance.fbx");
+  const dance2Anim = useFBX("/animations/dance2.fbx");
+  const runAnim = useFBX("/animations/run.fbx");
+  const victoryAnim = useFBX("/animations/victory.fbx");
+  const boxeAnim = useFBX("/animations/boxe.fbx");
+  const guitarAnim = useFBX("/animations/guitar.fbx");
+  const jumpAnim = useFBX("/animations/jump.fbx");
+  const kickAnim = useFBX("/animations/kick.fbx");
+  const kick2Anim = useFBX("/animations/kick2.fbx");
+  const rollAnim = useFBX("/animations/roll.fbx");
+  const flipAnim = useFBX("/animations/flip.fbx");
+  //
   const mixerRef = useRef(null);
   const actionsRef = useRef({});
-  const [currentAction, setCurrentAction] = useState(null);
   const characterRef = useRef();
   const velocity = useRef(new THREE.Vector3()); // Velocità del movimento
   const direction = useRef(new THREE.Vector3()); // Direzione del movimento
   const collisionBox = useRef(); // Box di collisione
   const collisionBoxGeometry = new THREE.BoxGeometry(0.5, 1.8, 0.2); // Dimensioni box collisione
+  //box collisione che avvolte il character
   const collisionBoxMaterial = new THREE.MeshBasicMaterial({
     transparent: true, // Abilita la trasparenza
-    opacity: 1,
+    opacity: 0,
     wireframe: true, // Per visualizzare la rete wireframe
   });
 
@@ -38,6 +60,18 @@ const Character = ({ cameraRef }) => {
       actionsRef.current = {
         idle: mixer.clipAction(idleAnim.animations[0]),
         walk: mixer.clipAction(walkAnim.animations[0]),
+        greetings: mixer.clipAction(greetingsAnim.animations[0]),
+        dance: mixer.clipAction(danceAnim.animations[0]),
+        dance2: mixer.clipAction(dance2Anim.animations[0]),
+        run: mixer.clipAction(runAnim.animations[0]),
+        victory: mixer.clipAction(victoryAnim.animations[0]),
+        boxe: mixer.clipAction(boxeAnim.animations[0]),
+        guitar: mixer.clipAction(guitarAnim.animations[0]),
+        jump: mixer.clipAction(jumpAnim.animations[0]),
+        kick: mixer.clipAction(kickAnim.animations[0]),
+        kick2: mixer.clipAction(kick2Anim.animations[0]),
+        roll: mixer.clipAction(rollAnim.animations[0]),
+        flip: mixer.clipAction(flipAnim.animations[0]),
       };
 
       setCurrentAction(actionsRef.current.idle);
@@ -50,6 +84,21 @@ const Character = ({ cameraRef }) => {
       return () => mixer.stopAllAction();
     }
   }, [model, idleAnim, walkAnim]);
+
+  //funzione per cambiare animazione, setta la camera ravvicinata
+  const playAnimation = (actionName) => {
+    if (actionsRef.current[actionName]) {
+      setCurrentAction(actionsRef.current[actionName]);
+      setCameraIndex(2);
+      velocity.current.set(0, 0, 0); // Ferma il movimento quando si cambia animazione
+    }
+  };
+
+  useEffect(() => {
+    if (animation !== "") {
+      playAnimation(animation);
+    }
+  }, [animation]);
 
   // Gestione del cambiamento di animazione
   useEffect(() => {
@@ -85,6 +134,15 @@ const Character = ({ cameraRef }) => {
     };
     animate();
   }, []);
+
+  /*
+  useEffect(() => {
+    if (characterRef.current) {
+      // Ruota il personaggio verso il basso ad inizio scena
+      characterRef.current.rotation.y = Math.PI / 2; // Ruota di 90 gradi verso il basso
+    }
+  }, []); // Questo effetto viene eseguito solo una volta, all'inizio della scena
+*/
 
   useFrame(() => {
     if (!characterRef.current) return;
@@ -152,6 +210,7 @@ const Character = ({ cameraRef }) => {
       // Cambia l'animazione in camminata
       if (currentAction !== actionsRef.current.walk) {
         setCurrentAction(actionsRef.current.walk); // Animazione camminata
+        setAnimation("");
         //actionsRef.current.walk.reset().fadeIn(0.2).play();
       }
     };
@@ -191,13 +250,12 @@ const Character = ({ cameraRef }) => {
   // Aggiorna la posizione della camera e del box di collisione
   useFrame(() => {
     if (cameraRef.current && characterRef.current) {
-      //offset camera top
-      //const offset = new THREE.Vector3(0, 50, -11);
-      //offset camera scene
-      //const offset = new THREE.Vector3(0, 10, -11);
-
-      //offset test
-      const offset = new THREE.Vector3(0, 4, -9);
+      //offset camera selezionata
+      const offset = new THREE.Vector3(
+        cameraPositions[cameraIndex].position[0],
+        cameraPositions[cameraIndex].position[1],
+        cameraPositions[cameraIndex].position[2]
+      );
 
       if (cameraRef.current) {
         cameraRef.current.position.lerp(
@@ -208,12 +266,11 @@ const Character = ({ cameraRef }) => {
       }
     }
 
+    //il box che rileva le collisioni si sposta in base alla direzione della camminata
     if (collisionBox.current && characterRef.current) {
       collisionBox.current.position.copy(characterRef.current.position);
 
       if (direction.current.z > 0) {
-        console.log("sopra");
-
         collisionBox.current.position.set(
           characterRef.current.position.x,
           characterRef.current.position.y + 1,
@@ -226,7 +283,6 @@ const Character = ({ cameraRef }) => {
       }
 
       if (direction.current.z < 0) {
-        console.log("sotto");
         collisionBox.current.position.set(
           characterRef.current.position.x,
           characterRef.current.position.y + 1,
@@ -239,7 +295,6 @@ const Character = ({ cameraRef }) => {
       }
 
       if (direction.current.x < 0) {
-        console.log("destra");
         collisionBox.current.position.set(
           characterRef.current.position.x - 0.4,
           characterRef.current.position.y + 1,
@@ -252,7 +307,6 @@ const Character = ({ cameraRef }) => {
       }
 
       if (direction.current.x > 0) {
-        console.log("sinistra");
         collisionBox.current.position.set(
           characterRef.current.position.x + 0.4,
           characterRef.current.position.y + 1,
@@ -328,8 +382,8 @@ const Character = ({ cameraRef }) => {
 
   return (
     <>
-      <primitive ref={characterRef} object={model} scale={0.01} />
-      {/* Box di collisione visibile */}
+      <primitive ref={characterRef} object={model} scale={0.01}/>
+      {/* Box di collisione */}
       <mesh
         ref={collisionBox}
         geometry={collisionBoxGeometry}
