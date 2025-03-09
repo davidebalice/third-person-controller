@@ -1,34 +1,33 @@
-import { OrbitControls, PerspectiveCamera, Sky } from "@react-three/drei";
+import { PerspectiveCamera, Sky } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import React, { useRef, useState } from "react";
 import Character from "./Character";
 import City from "./City";
+import Header from "./Header";
+import Info from "./Info";
 import Preloader from "./Preloader";
 import Ui from "./Ui";
+import cameraPositions from "./cameraPositions";
 
 const Scene = () => {
   const cameraRef = useRef();
   const [animation, setAnimation] = useState("");
   const [loading, setLoading] = useState(true);
-  const cameraPositions = [
-    { position: [0, 10, -11], label: "Camera 1" },
-    { position: [0, 50, -11], label: "Camera 2" },
-    { position: [0, 4, -9], label: "Camera 3" },
-  ];
-  //    { position: [0, 10, 20], label: "Camera 1" },
-
+  const [info, setInfo] = useState(false);
   const [cameraIndex, setCameraIndex] = useState(0);
 
   return (
     <>
       {loading && <Preloader />}
+      {info && <Info setInfo={setInfo} />}
+      <Header setInfo={setInfo} />
       <Ui
         cameraIndex={cameraIndex}
         setCameraIndex={setCameraIndex}
         animation={animation}
         setAnimation={setAnimation}
       />
-      <Canvas shadow>
+      <Canvas>
         <PerspectiveCamera position={[10, 4, 10]} makeDefault ref={cameraRef} />
         <Sky
           distance={1000}
@@ -49,7 +48,6 @@ const Scene = () => {
           setAnimation={setAnimation}
         />
         <City setLoading={setLoading} />
-        <OrbitControls />
       </Canvas>
     </>
   );

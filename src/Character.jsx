@@ -89,7 +89,7 @@ const Character = ({
   const playAnimation = (actionName) => {
     if (actionsRef.current[actionName]) {
       setCurrentAction(actionsRef.current[actionName]);
-      setCameraIndex(2);
+     // setCameraIndex(1);
       velocity.current.set(0, 0, 0); // Ferma il movimento quando si cambia animazione
     }
   };
@@ -135,15 +135,6 @@ const Character = ({
     animate();
   }, []);
 
-  /*
-  useEffect(() => {
-    if (characterRef.current) {
-      // Ruota il personaggio verso il basso ad inizio scena
-      characterRef.current.rotation.y = Math.PI / 2; // Ruota di 90 gradi verso il basso
-    }
-  }, []); // Questo effetto viene eseguito solo una volta, all'inizio della scena
-*/
-
   useFrame(() => {
     if (!characterRef.current) return;
 
@@ -171,7 +162,33 @@ const Character = ({
     if (isBlocked.up || isBlocked.down || isBlocked.left || isBlocked.right) {
       velocity.current.set(0, 0, 0);
     }
+
+    const dispatchKeyUp = (key) => {
+      const event = new KeyboardEvent("keyup", { key });
+      window.dispatchEvent(event);
+      setCurrentAction(actionsRef.current.idle);
+    };
+
+    if (isBlocked.up) dispatchKeyUp("ArrowUp");
+    if (isBlocked.down) dispatchKeyUp("ArrowDown");
+    if (isBlocked.left) dispatchKeyUp("ArrowLeft");
+    if (isBlocked.right) dispatchKeyUp("ArrowRight");
   });
+
+  //posizione e rotazione iniziale del character
+  useEffect(() => {
+    setTimeout(() => {
+      const movement = new THREE.Vector3(0, 0, -0.01);
+      if (characterRef.current) {
+        direction.current.set(0, 0, movement.z > 0 ? 1 : -1);
+        characterRef.current.position.add(movement);
+        characterRef.current.rotation.y = Math.atan2(
+          direction.current.x,
+          direction.current.z
+        );
+      }
+    }, 700);
+  }, []);
 
   // Gestione dei movimenti con i tasti
   useEffect(() => {
@@ -320,7 +337,7 @@ const Character = ({
     }
   });
 
-  // 💡 AGGIUNGI SUPPORTO TOUCH 💡
+  //SUPPORTO TOUCH
   useEffect(() => {
     const handleTouchStart = (event) => {
       if (event.touches.length === 1) {
@@ -382,7 +399,8 @@ const Character = ({
 
   return (
     <>
-      <primitive ref={characterRef} object={model} scale={0.01}/>
+      {/* Character */}
+      <primitive ref={characterRef} object={model} scale={0.01} />
       {/* Box di collisione */}
       <mesh
         ref={collisionBox}
@@ -405,7 +423,7 @@ const Character = ({
           <boxGeometry
             args={[wall.max.x - wall.min.x, 2, wall.max.z - wall.min.z]}
           />
-          <meshBasicMaterial color="blue" transparent opacity={0.2} />
+          <meshBasicMaterial color="blue" transparent opacity={0} />
         </mesh>
       ))}
     </>

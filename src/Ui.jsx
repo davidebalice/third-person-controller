@@ -1,23 +1,33 @@
 import React from "react";
+import animations from "./animations";
 
 const Ui = ({ cameraIndex, setCameraIndex, animation, setAnimation }) => {
   return (
     <>
-      <div onClick={() => setCameraIndex(0)}>1</div>
-      <div onClick={() => setCameraIndex(1)}>2</div>
-      <div onClick={() => setCameraIndex(2)}>3</div>
-      <div onClick={() => setAnimation("greetings")}>greetings</div>
-      <div onClick={() => setAnimation("dance")}>dance</div>
-      <div onClick={() => setAnimation("dance2")}>dance2</div>
-      <div onClick={() => setAnimation("run")}>run</div>
-      <div onClick={() => setAnimation("victory")}>victory</div>
-      <div onClick={() => setAnimation("boxe")}>boxe</div>
-      <div onClick={() => setAnimation("guitar")}>guitar</div>
-      <div onClick={() => setAnimation("jump")}>jump</div>
-      <div onClick={() => setAnimation("kick")}>kick</div>
-      <div onClick={() => setAnimation("kick2")}>kick2</div>
-      <div onClick={() => setAnimation("roll")}>roll</div>
-      <div onClick={() => setAnimation("flip")}>flip</div>
+      <div className="ui">
+        <div className="ui-title">Camera</div>
+        <div className="ui-body">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="ui-button"
+              onClick={() => setCameraIndex(i)}
+            >
+              {i + 1}
+            </div>
+          ))}
+        </div>
+        <div className="ui-title">Animations</div>
+        <div className="ui-body">
+          {animations &&
+            animations.map((item) => (
+              <div className="ui-button" onClick={() => setAnimation(item)}>
+                {item}
+              </div>
+            ))}
+        </div>
+        <div className="ui-title"><a href="https://www.davidebalice.dev" target="_blank">www.davidebalice.dev</a></div>
+      </div>
     </>
   );
 };
