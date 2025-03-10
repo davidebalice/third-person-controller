@@ -1,10 +1,10 @@
 # react-three-fiber-third-person-controller
 
-Example of third person controller developer in React Three Fiber
-Character and animations by Mixamo
-Character movement via keys or touch
-Collision system between character and walls of the scenario
-Animation change between idle and walk
+Example of third person controller developer in React Three Fiber<br>
+Character and animations by Mixamo<br>
+Character movement via keys or touch<br>
+Collision system between character and walls of the scenario<br>
+Animation change between idle and walk<br>
 6 different cameras and 12 animations
 
 ## 3D Models Credits

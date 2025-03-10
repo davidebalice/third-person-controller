@@ -89,7 +89,7 @@ const Character = ({
   const playAnimation = (actionName) => {
     if (actionsRef.current[actionName]) {
       setCurrentAction(actionsRef.current[actionName]);
-     // setCameraIndex(1);
+      // setCameraIndex(1);
       velocity.current.set(0, 0, 0); // Ferma il movimento quando si cambia animazione
     }
   };
@@ -189,14 +189,17 @@ const Character = ({
       }
     }, 700);
   }, []);
-
+  
   // Gestione dei movimenti con i tasti
   useEffect(() => {
     const handleKeyDown = (event) => {
       let movement = new THREE.Vector3();
 
       // Imposta la direzione in base al tasto premuto
-      if (!blockedUp && (event.key === "w" || event.key === "ArrowUp")) {
+      if (
+        !blockedUp &&
+        (event.key === "w" || event.key === "ArrowUp")
+      ) {
         movement.set(0, 0, speed); // Movimento in avanti (positiva Z)
       } else if (
         !blockedDown &&
@@ -337,7 +340,8 @@ const Character = ({
     }
   });
 
-  //SUPPORTO TOUCH
+  //SUPPORTO TOUCH - movimento con lo swipe
+  /*
   useEffect(() => {
     const handleTouchStart = (event) => {
       if (event.touches.length === 1) {
@@ -396,6 +400,7 @@ const Character = ({
       window.removeEventListener("touchend", handleTouchEnd);
     };
   }, [currentAction, blockedUp, blockedDown, blockedLeft, blockedRight]);
+  */
 
   return (
     <>
