@@ -1,10 +1,29 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { IoMdArrowDropright } from "react-icons/io";
 import { RiDeleteBack2Fill } from "react-icons/ri";
 import animations from "./animations";
 
 const Ui = ({ setCameraIndex, setAnimation, uiVisible, setUiVisible }) => {
   const [isMoving, setIsMoving] = useState(false);
+
+  //funzione che rileva se il dispositivo è touch
+  const useIsTouchDevice = () => {
+    const [isTouch, setIsTouch] = useState(false);
+
+    useEffect(() => {
+      const checkTouch = () => {
+        setIsTouch("ontouchstart" in window || navigator.maxTouchPoints > 0);
+      };
+
+      checkTouch();
+      window.addEventListener("resize", checkTouch);
+      return () => window.removeEventListener("resize", checkTouch);
+    }, []);
+
+    return isTouch;
+  };
+
+  const isTouchDevice = useIsTouchDevice();
 
   const handleClick = (key) => {
     // Simula il "keydown"
@@ -38,33 +57,40 @@ const Ui = ({ setCameraIndex, setAnimation, uiVisible, setUiVisible }) => {
 
   return (
     <>
-      <IoMdArrowDropright className="open" onClick={() => setUiVisible(true)} />
+      {!uiVisible && (
+        <>
+          <div className="openContainer">
+            <IoMdArrowDropright
+              className="open"
+              onClick={() => setUiVisible(true)}
+            />
+          </div>
+        </>
+      )}
 
-      <div className="controls">
+      <div className={`controls ${isTouchDevice && "open"}`}>
         <button
           onTouchStart={() => handleClick("w")}
           onTouchEnd={() => handleRelease("w")}
-        >
-          ↑
-        </button>
-        <button
-          onTouchStart={() => handleClick("a")}
-          onTouchEnd={() => handleRelease("a")}
-        >
-          ←
-        </button>
-        <button
-          onTouchStart={() => handleClick("d")}
-          onTouchEnd={() => handleRelease("d")}
-        >
-          →
-        </button>
+          className="controlsButtons buttonUp"
+        />
+
         <button
           onTouchStart={() => handleClick("s")}
           onTouchEnd={() => handleRelease("s")}
-        >
-          ↓
-        </button>
+          className="controlsButtons buttonDown"
+        />
+
+        <button
+          onTouchStart={() => handleClick("a")}
+          onTouchEnd={() => handleRelease("a")}
+          className="controlsButtons buttonLeft"
+        />
+        <button
+          onTouchStart={() => handleClick("d")}
+          onTouchEnd={() => handleRelease("d")}
+          className="controlsButtons buttonRight"
+        />
       </div>
 
       <div className={`ui ${!uiVisible && "close"}`}>
@@ -93,7 +119,11 @@ const Ui = ({ setCameraIndex, setAnimation, uiVisible, setUiVisible }) => {
         <div className="ui-body">
           {animations &&
             animations.map((item) => (
-              <div className="ui-button" onClick={() => setAnimation(item)}>
+              <div
+                className="ui-button"
+                onClick={() => setAnimation(item)}
+                key={item}
+              >
                 {item}
               </div>
             ))}

@@ -30,11 +30,11 @@ body,
   color: white;
   background-color: rgba(0, 0, 0, 0.7);
   box-shadow: 0px 3px 4px 0px rgb(0, 0, 0, 0.31);
-  transition: all 0.8s;
+  transition: all 0.4s;
 }
 
 .ui.close {
-  margin-left: -100%;
+  margin-left: -200px;
 }
 
 .ui-title {
@@ -58,12 +58,21 @@ body,
   cursor: pointer;
 }
 
-.open{
-  font-size: 33px;
+.openContainer {
+  background-color: rgba(0, 0, 0, 0.7);
+  width: 40px;
+  height: 60px;
+  margin-top: 100px;
   position: fixed;
-  top:70px;
   z-index: 100;
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
 
+.open {
+  font-size: 40px;
+  color: white;
+  margin-top: 10px;
 }
 
 .back:hover {
@@ -174,7 +183,6 @@ body,
 .modal {
   width: 90%;
   max-width: 700px;
-  padding: 0 20px;
   height: 350px;
   background-color: white;
   margin: 0 auto;
@@ -191,6 +199,12 @@ body,
   color: #777;
 }
 
+.modalWrapper {
+  padding: 0 20px;
+  overflow-y: auto;
+  height: 300px;
+}
+
 .close {
   float: right;
   font-size: 28px;
@@ -199,8 +213,61 @@ body,
 }
 
 .controls {
+  display: none;
   font-size: 40px;
-  display: flex;
-  justify-content: space-between;
-  margin-top: 100px;
+  position: fixed;
+  z-index: 100;
+  bottom: 10px;
+  left: 10px;
+  width: 150px;
+  height: 150px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+}
+
+.controls.open {
+  display: block;
+}
+
+.controlsButtons {
+  background: none;
+  border: none;
+  position: absolute;
+}
+
+.buttonUp {
+  width: 40px;
+  height: 54px;
+  margin-left: 54px;
+  margin-top: 18px;
+  background-image: url("./public/assets/textures/up.png");
+  background-size: 40px;
+}
+
+.buttonDown {
+  width: 40px;
+  height: 54px;
+  margin-left: 54px;
+  margin-top: 80px;
+  background-image: url("./public/assets/textures/down.png");
+  background-size: 40px;
+}
+
+.buttonLeft {
+  width: 54px;
+  height: 40px;
+  margin-left: 14px;
+  margin-top: 57px;
+  background-image: url("./public/assets/textures/left.png");
+  background-size: 54px;
+}
+
+.buttonRight {
+  width: 54px;
+  height: 40px;
+
+  margin-left: 80px;
+  margin-top: 57px;
+  background-image: url("./public/assets/textures/right.png");
+  background-size: 54px;
 }
