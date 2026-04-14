@@ -14,7 +14,7 @@ export default function City({ setLoading }) {
 
   return (
     <>
-      <Environment preset="warehouse" />
+      <Environment preset="city" />
 
       <primitive
         object={city.scene}

@@ -1,6 +1,7 @@
 import { PerspectiveCamera, Sky } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import React, { useRef, useState } from "react";
+import * as THREE from "three";
 import Character from "./Character";
 import City from "./City";
 import Header from "./Header";
@@ -9,7 +10,7 @@ import Preloader from "./Preloader";
 import Ui from "./Ui";
 import cameraPositions from "./cameraPositions";
 
-const Scene = () => {
+const Scene = ({ selectedCharacter, setSelectedCharacter }) => {
   const cameraRef = useRef();
   const [animation, setAnimation] = useState("");
   const [loading, setLoading] = useState(true);
@@ -22,41 +23,44 @@ const Scene = () => {
       {loading && <Preloader />}
       {info && <Info setInfo={setInfo} />}
       <Header setInfo={setInfo} />
-        <Ui
+      <Ui
+        cameraIndex={cameraIndex}
+        setCameraIndex={setCameraIndex}
+        animation={animation}
+        setAnimation={setAnimation}
+        uiVisible={uiVisible}
+        setUiVisible={setUiVisible}
+        selectedCharacter={selectedCharacter}
+        setSelectedCharacter={setSelectedCharacter}
+      />
+      <Canvas gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, outputColorSpace: THREE.SRGBColorSpace }}>
+        <PerspectiveCamera
+          position={[10, 4, 10]}
+          makeDefault
+          ref={cameraRef}
+        />
+        <Sky
+          distance={1000}
+          sunPosition={[100, 100, 100]}
+          turbidity={10}
+          rayleigh={1}
+          mieCoefficient={0.005}
+          mieDirectionalG={0.8}
+        />
+        <ambientLight intensity={1.5} />
+        <directionalLight position={[5, 10, 5]} intensity={1.0} castShadow />
+
+        <Character
+          cameraRef={cameraRef}
+          cameraPositions={cameraPositions}
           cameraIndex={cameraIndex}
           setCameraIndex={setCameraIndex}
           animation={animation}
           setAnimation={setAnimation}
-          uiVisible={uiVisible}
-          setUiVisible={setUiVisible}
+          selectedCharacter={selectedCharacter}
         />
-        <Canvas>
-          <PerspectiveCamera
-            position={[10, 4, 10]}
-            makeDefault
-            ref={cameraRef}
-          />
-          <Sky
-            distance={1000}
-            sunPosition={[100, 100, 100]}
-            turbidity={10}
-            rayleigh={1}
-            mieCoefficient={0.005}
-            mieDirectionalG={0.8}
-          />
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[5, 10, 5]} intensity={0.1} />
-
-          <Character
-            cameraRef={cameraRef}
-            cameraPositions={cameraPositions}
-            cameraIndex={cameraIndex}
-            setCameraIndex={setCameraIndex}
-            animation={animation}
-            setAnimation={setAnimation}
-          />
-          <City setLoading={setLoading} />
-        </Canvas>
+        <City setLoading={setLoading} />
+      </Canvas>
     </>
   );
 };

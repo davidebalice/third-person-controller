@@ -3,8 +3,16 @@ import { IoMdArrowDropright } from "react-icons/io";
 import { RiDeleteBack2Fill } from "react-icons/ri";
 import animations from "./animations";
 
-const Ui = ({ setCameraIndex, setAnimation, uiVisible, setUiVisible }) => {
+const Ui = ({ setCameraIndex, setAnimation, uiVisible, setUiVisible, selectedCharacter, setSelectedCharacter }) => {
   const [isMoving, setIsMoving] = useState(false);
+  const [characterModalVisible, setCharacterModalVisible] = useState(false);
+
+  const characters = [
+    { name: "ADAM", path: "/models/AdamAnim/AdamAnim.fbx", role: "WARRIOR", hp: "120", speed: "Medium", desc: "A powerful ancient warrior with great strength.", image: "https://images.unsplash.com/photo-1552072092-7f9b8d63efcb?q=80&w=250&auto=format&fit=crop" },
+    { name: "RECRUIT", path: "/models/character.fbx", role: "ASSAULT", hp: "100", speed: "Fast", desc: "A balanced and reliable unit, perfect for standard operations.", image: "https://images.unsplash.com/photo-1542382109-77a8bdf1ef53?q=80&w=250&auto=format&fit=crop" },
+    { name: "???", path: "", role: "LOCKED", hp: "???", speed: "???", desc: "Coming soon...", image: "https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?q=80&w=250&auto=format&fit=crop" },
+    { name: "???", path: "", role: "LOCKED", hp: "???", speed: "???", desc: "Coming soon...", image: "https://images.unsplash.com/photo-1582269438706-e2db3db11aa3?q=80&w=250&auto=format&fit=crop" },
+  ];
 
   //funzione che rileva se il dispositivo è touch
   const useIsTouchDevice = () => {
@@ -68,6 +76,55 @@ const Ui = ({ setCameraIndex, setAnimation, uiVisible, setUiVisible }) => {
         </>
       )}
 
+      {characterModalVisible && (
+        <div className="premium-overlay">
+          <div className="premium-modal">
+            <div className="premium-modal-header">
+              <h2>CHARACTER SELECTION</h2>
+              <div
+                className="premium-close-btn"
+                onClick={() => setCharacterModalVisible(false)}
+              >
+                <span>✕</span>
+              </div>
+            </div>
+
+            <div className="premium-character-grid">
+              {characters.map((char, index) => {
+                const isSelected = selectedCharacter === char.path;
+                return (
+                  <div
+                    key={index}
+                    className={`premium-character-card ${isSelected ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedCharacter(char.path);
+                      // setCharacterModalVisible(false); // Let user see the selection effect, maybe close manually
+                    }}
+                  >
+                    <div className="premium-card-image" style={{ backgroundImage: `url(${char.image})` }}>
+                      {isSelected && <div className="premium-card-badge">DEPLOYED</div>}
+                    </div>
+                    <div className="premium-card-content">
+                      <div className="premium-card-role">{char.role}</div>
+                      <h3 className="premium-card-name">{char.name}</h3>
+                      <div className="premium-card-stats">
+                        <div className="stat"><span className="label">HP</span><span className="val">{char.hp}</span></div>
+                        <div className="stat"><span className="label">SPD</span><span className="val">{char.speed}</span></div>
+                      </div>
+                      <p className="premium-card-desc">{char.desc}</p>
+
+                      <button className="premium-select-btn">
+                        {isSelected ? 'SELECTED' : 'SELECT'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className={`controls ${isTouchDevice && "open"}`}>
         <button
           onTouchStart={() => handleClick("w")}
@@ -128,6 +185,17 @@ const Ui = ({ setCameraIndex, setAnimation, uiVisible, setUiVisible }) => {
               </div>
             ))}
         </div>
+
+        <div className="ui-title">Personaggio</div>
+        <div className="ui-body">
+          <div
+            className="premium-ui-btn"
+            onClick={() => setCharacterModalVisible(true)}
+          >
+            Cambia Personaggio
+          </div>
+        </div>
+
         <div className="ui-title">
           <a href="https://www.davidebalice.dev" target="_blank">
             www.davidebalice.dev
