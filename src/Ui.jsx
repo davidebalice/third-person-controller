@@ -8,8 +8,8 @@ const Ui = ({ setCameraIndex, setAnimation, uiVisible, setUiVisible, selectedCha
   const [characterModalVisible, setCharacterModalVisible] = useState(false);
 
   const characters = [
-    { name: "ADAM", path: "/models/AdamAnim/AdamAnim.fbx", role: "WARRIOR", hp: "120", speed: "Medium", desc: "A powerful ancient warrior with great strength.", image: "https://images.unsplash.com/photo-1552072092-7f9b8d63efcb?q=80&w=250&auto=format&fit=crop" },
-    { name: "RECRUIT", path: "/models/character.fbx", role: "ASSAULT", hp: "100", speed: "Fast", desc: "A balanced and reliable unit, perfect for standard operations.", image: "https://images.unsplash.com/photo-1542382109-77a8bdf1ef53?q=80&w=250&auto=format&fit=crop" },
+    { name: "ADAM", path: "/models/AdamAnim/AdamAnim.fbx", role: "WARRIOR", hp: "120", speed: "Medium", desc: "A powerful ancient warrior with great strength.", image: "/assets/adam.jpg" },
+    { name: "GENERIC BOY", path: "/models/character.fbx", role: "ASSAULT", hp: "100", speed: "Fast", desc: "A balanced and reliable unit, perfect for standard operations.", image: "/assets/genericboy.jpg" },
     { name: "???", path: "", role: "LOCKED", hp: "???", speed: "???", desc: "Coming soon...", image: "https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?q=80&w=250&auto=format&fit=crop" },
     { name: "???", path: "", role: "LOCKED", hp: "???", speed: "???", desc: "Coming soon...", image: "https://images.unsplash.com/photo-1582269438706-e2db3db11aa3?q=80&w=250&auto=format&fit=crop" },
   ];
@@ -105,13 +105,7 @@ const Ui = ({ setCameraIndex, setAnimation, uiVisible, setUiVisible, selectedCha
                       {isSelected && <div className="premium-card-badge">DEPLOYED</div>}
                     </div>
                     <div className="premium-card-content">
-                      <div className="premium-card-role">{char.role}</div>
-                      <h3 className="premium-card-name">{char.name}</h3>
-                      <div className="premium-card-stats">
-                        <div className="stat"><span className="label">HP</span><span className="val">{char.hp}</span></div>
-                        <div className="stat"><span className="label">SPD</span><span className="val">{char.speed}</span></div>
-                      </div>
-                      <p className="premium-card-desc">{char.desc}</p>
+                      <h3 className="premium-card-name" style={{ textAlign: 'center', marginBottom: '20px' }}>{char.name}</h3>
 
                       <button className="premium-select-btn">
                         {isSelected ? 'SELECTED' : 'SELECT'}
@@ -192,7 +186,7 @@ const Ui = ({ setCameraIndex, setAnimation, uiVisible, setUiVisible, selectedCha
             className="premium-ui-btn"
             onClick={() => setCharacterModalVisible(true)}
           >
-            Cambia Personaggio
+            Select Character
           </div>
         </div>
 

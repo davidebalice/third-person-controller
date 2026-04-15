@@ -89,13 +89,24 @@ const Character = ({
     });
   };
 
-  // Caricamento e configurazione delle animazioni del modello
+  // Inizializzazione Unificata (Model Setup + Mixer + Actions)
   useEffect(() => {
-    if (model) {
-      fixRigNames(model);
-      refreshBinding(model);
-      
-      // Store arm references and brighten materials
+    if (model && idleAnim && walkAnim) {
+      // 1. Setup del Modello (Posizione, Visibilità)
+      model.visible = true;
+      if (characterRef.current) {
+        characterRef.current.rotation.y = Math.atan2(0, -1);
+        characterRef.current.position.z = 0;
+      }
+
+      // 2. Fix del Rig (Bones) - Solo se non già fatto sul modello in cache
+      if (!model.userData.rigFixed) {
+        fixRigNames(model);
+        refreshBinding(model);
+        model.userData.rigFixed = true;
+      }
+
+      // 3. Setup Materiali e Riferimenti
       model.traverse((n) => {
         if (n.name === "LeftArm") leftArmRef.current = n;
         if (n.name === "RightArm") rightArmRef.current = n;
@@ -103,107 +114,134 @@ const Character = ({
         if (n.isMesh) {
           n.castShadow = true;
           n.receiveShadow = true;
+          n.frustumCulled = false;
+
           if (n.material) {
-            // Se è Adam, rendiamo le texture più "brillanti" e vivaci
-            if (selectedCharacter.includes("AdamAnim.fbx")) {
-              n.material.roughness = 0.7;
-              n.material.metalness = 0.1;
-              // Un leggero emissivo per il "bagliore" richiesto, ma molto ridotto
-              n.material.emissive = new THREE.Color(0x111111);
-              n.material.emissiveIntensity = 0.5;
-              // Scuriamo leggermente il colore base per rendere le texture "poco poco più scure"
-              n.material.color.set(0xcccccc); 
+            n.material.transparent = false;
+            n.material.opacity = 1;
+            n.material.visible = true;
+            n.material.side = THREE.DoubleSide; 
+
+            const isAdam = selectedCharacter.toLowerCase().includes("adamanim.fbx");
+            if (isAdam) {
+              n.material.roughness = 0.6;
+              n.material.metalness = 0.2;
+              n.material.emissive = new THREE.Color(0x222222);
+              n.material.emissiveIntensity = 0.1;
+              n.material.color.set(0xffffff);
             } else {
-              // Per gli altri personaggi, un miglioramento più leggero
               n.material.roughness = Math.max(0.3, n.material.roughness * 0.8);
             }
             
-            if (n.material.map) {
-                n.material.map.anisotropy = 16;
-            }
+            // Texture cleanup
+            const textureProps = ["map", "normalMap", "specularMap", "roughnessMap", "metalnessMap", "emissiveMap"];
+            textureProps.forEach(prop => {
+              if (n.material[prop]) {
+                const tex = n.material[prop];
+                if (tex.source?.data?.src) {
+                  const src = String(tex.source.data.src);
+                  if (src.includes("<UDIM>") || src.includes("%3CUDIM%3E") || src.toLowerCase().includes("udim")) {
+                    n.material[prop] = null;
+                  }
+                }
+              }
+            });
+            if (n.material.map) n.material.map.anisotropy = 16;
           }
         }
       });
-    }
-    if (model && idleAnim && walkAnim) {
-      const allAnims = [
-        idleAnim, walkAnim, greetingsAnim, danceAnim, dance2Anim,
-        runAnim, victoryAnim, boxeAnim, guitarAnim, jumpAnim,
-        kickAnim, kick2Anim, rollAnim, flipAnim
-      ];
 
-      allAnims.forEach(anim => {
-        if (anim && anim.animations) {
-          // CLONIAMO le animazioni per evitare conflitti tra personaggi
-          anim.animations = anim.animations.map(clip => {
-            const newClip = clip.clone();
-            if (selectedCharacter.includes("AdamAnim.fbx")) {
-              newClip.tracks = newClip.tracks.filter(track => {
-                return !/Thumb|Index|Middle|Ring|Pinky|Toe|LeftHand/i.test(track.name);
-              });
-            }
-            fixAnimationClips([newClip]);
-            return newClip;
-          });
-        }
-      });
+      // 4. Creazione Mixer e Binding Animazioni
+      // Pulizia mixer precedente se esistente
+      if (mixerRef.current) {
+        mixerRef.current.stopAllAction();
+        mixerRef.current.uncacheRoot(model);
+      }
 
       const mixer = new THREE.AnimationMixer(model);
       mixerRef.current = mixer;
 
-      actionsRef.current = {
-        idle: mixer.clipAction(idleAnim.animations[0]),
-        walk: mixer.clipAction(walkAnim.animations[0]),
-        greetings: mixer.clipAction(greetingsAnim.animations[0]),
-        dance: mixer.clipAction(danceAnim.animations[0]),
-        dance2: mixer.clipAction(dance2Anim.animations[0]),
-        run: mixer.clipAction(runAnim.animations[0]),
-        victory: mixer.clipAction(victoryAnim.animations[0]),
-        boxe: mixer.clipAction(boxeAnim.animations[0]),
-        guitar: mixer.clipAction(guitarAnim.animations[0]),
-        jump: mixer.clipAction(jumpAnim.animations[0]),
-        kick: mixer.clipAction(kickAnim.animations[0]),
-        kick2: mixer.clipAction(kick2Anim.animations[0]),
-        roll: mixer.clipAction(rollAnim.animations[0]),
-        flip: mixer.clipAction(flipAnim.animations[0]),
+      const animationFiles = {
+        idle: idleAnim, walk: walkAnim, greetings: greetingsAnim, 
+        dance: danceAnim, dance2: dance2Anim, run: runAnim, 
+        victory: victoryAnim, boxe: boxeAnim, guitar: guitarAnim, 
+        jump: jumpAnim, kick: kickAnim, kick2: kick2Anim, 
+        roll: rollAnim, flip: flipAnim
       };
 
-      setCurrentAction(actionsRef.current.idle);
-      actionsRef.current.idle.play();
+      const newActions = {};
 
-      actionsRef.current.idle.loop = THREE.LoopRepeat;
-      actionsRef.current.walk.loop = THREE.LoopRepeat;
+      Object.entries(animationFiles).forEach(([name, anim]) => {
+        if (anim?.animations?.[0]) {
+          const clonedClip = anim.animations[0].clone();
+          clonedClip.name = name;
 
-      return () => mixer.stopAllAction();
+          // Filtro tracce specifiche per Adam
+          if (selectedCharacter.includes("AdamAnim.fbx")) {
+            clonedClip.tracks = clonedClip.tracks.filter(track => !/Thumb|Index|Middle|Ring|Pinky|Toe|LeftHand/i.test(track.name));
+          }
+          
+          fixAnimationClips([clonedClip]);
+
+          const action = mixer.clipAction(clonedClip);
+          newActions[name] = action;
+
+          // Tutte le animazioni ora sono in loop infinito su richiesta dell'utente
+          action.loop = THREE.LoopRepeat;
+          action.clampWhenFinished = false;
+        }
+      });
+
+      actionsRef.current = newActions;
+
+      // Azione Iniziale
+      if (actionsRef.current.idle) {
+        actionsRef.current.idle.reset().play();
+        setCurrentAction(actionsRef.current.idle);
+      }
+
+      return () => {
+        mixer.stopAllAction();
+        mixer.uncacheRoot(model);
+      };
     }
-  }, [model, idleAnim, walkAnim]);
+  }, [model, idleAnim, walkAnim, selectedCharacter]);
 
-  //funzione per cambiare animazione
+  // Funzione per cambiare animazione
   const playAnimation = (actionName) => {
-    if (actionsRef.current[actionName]) {
-      setCurrentAction(actionsRef.current[actionName]);
+    const action = actionsRef.current[actionName];
+    if (action) {
+      if (currentAction === action) {
+        action.reset().fadeIn(0.2).play();
+      } else {
+        setCurrentAction(action);
+      }
       velocity.current.set(0, 0, 0); 
     }
   };
 
   useEffect(() => {
-    if (animation !== "") {
+    if (animation && animation !== "") {
       playAnimation(animation);
     }
   }, [animation]);
 
-  // Gestione del cambiamento di animazione
+  // Sincronizzazione dell'azione corrente (Fade e Play)
   useEffect(() => {
-    if (currentAction) {
+    if (currentAction && mixerRef.current) {
+      // Transizione rapida: fade out delle altre azioni
       Object.values(actionsRef.current).forEach((action) => {
-        if (action !== currentAction) {
-          action.fadeOut(0.5); 
+        if (action !== currentAction && action.isRunning()) {
+          action.fadeOut(0.1); 
         }
       });
 
+      // Avvio immediato della nuova azione
       currentAction
         .reset()
-        .fadeIn(0.2) 
+        .setEffectiveTimeScale(1)
+        .setEffectiveWeight(1)
+        .fadeIn(0.1) 
         .play();
     }
   }, [currentAction]);
@@ -225,7 +263,6 @@ const Character = ({
     if (mixerRef.current) mixerRef.current.update(delta);
     if (!characterRef.current || !collisionBox.current) return;
 
-    // 1. Calcolo movimento desiderato dai tasti
     let moveX = 0;
     let moveZ = 0;
     if (keysPressed.current["w"] || keysPressed.current["ArrowUp"]) moveZ += speed;
@@ -233,10 +270,8 @@ const Character = ({
     if (keysPressed.current["a"] || keysPressed.current["ArrowLeft"]) moveX += speed;
     if (keysPressed.current["d"] || keysPressed.current["ArrowRight"]) moveX -= speed;
 
-    // Aggiornamento velocità interna
     velocity.current.set(moveX, 0, moveZ);
 
-    // 2. Gestione collisioni a scorrimento (Sliding)
     const currentPos = characterRef.current.position.clone();
     
     // Check assex X
@@ -245,51 +280,41 @@ const Character = ({
       collisionBox.current.position.set(nextX, currentPos.y + 1, currentPos.z);
       collisionBox.current.updateMatrixWorld(true);
       const characterBoxX = new THREE.Box3().setFromObject(collisionBox.current);
-      
       let collidedX = false;
       for (const wall of walls) {
-        if (characterBoxX.intersectsBox(wall)) {
-          collidedX = true;
-          break;
-        }
+        if (characterBoxX.intersectsBox(wall)) { collidedX = true; break; }
       }
-      if (!collidedX) {
-        characterRef.current.position.x = nextX;
-      }
+      if (!collidedX) characterRef.current.position.x = nextX;
     }
 
     // Check asse Z
     if (moveZ !== 0) {
-      const nextZ = characterRef.current.position.z + moveZ;
+      const nextZ = currentPos.z + moveZ;
       collisionBox.current.position.set(characterRef.current.position.x, currentPos.y + 1, nextZ);
       collisionBox.current.updateMatrixWorld(true);
       const characterBoxZ = new THREE.Box3().setFromObject(collisionBox.current);
-      
       let collidedZ = false;
       for (const wall of walls) {
-        if (characterBoxZ.intersectsBox(wall)) {
-          collidedZ = true;
-          break;
-        }
+        if (characterBoxZ.intersectsBox(wall)) { collidedZ = true; break; }
       }
-      if (!collidedZ) {
-        characterRef.current.position.z = nextZ;
-      }
+      if (!collidedZ) characterRef.current.position.z = nextZ;
     }
 
-    // 3. Update Rotazione
+    // 3. Update Rotazione e animazioni di base
     if (moveX !== 0 || moveZ !== 0) {
       direction.current.set(moveX, 0, moveZ);
       characterRef.current.rotation.y = Math.atan2(moveX, moveZ);
       
-      // Update animation to walk
-      if (currentAction !== actionsRef.current.walk && animation === "") {
-        setCurrentAction(actionsRef.current.walk);
+      // Se ci stiamo muovendo, interrompiamo eventuali animazioni speciali
+      if (animation !== "") {
         setAnimation("");
       }
+
+      if (actionsRef.current.walk && currentAction !== actionsRef.current.walk) {
+        setCurrentAction(actionsRef.current.walk);
+      }
     } else {
-      // Update animation to idle if no movement and not playing a special animation
-      if (currentAction !== actionsRef.current.idle && animation === "") {
+      if (animation === "" && actionsRef.current.idle && currentAction !== actionsRef.current.idle) {
         setCurrentAction(actionsRef.current.idle);
       }
     }
@@ -308,20 +333,10 @@ const Character = ({
       cameraRef.current.lookAt(characterRef.current.position);
     }
 
-    // Sync arm references (micro-animations)
+    // Ripristino offset braccia per silhouette (fondamentale per Adam)
     if (leftArmRef.current) leftArmRef.current.rotation.z = -0.3;
     if (rightArmRef.current) rightArmRef.current.rotation.z = 0.3;
   });
-
-  //posizione e rotazione iniziale del character
-  useEffect(() => {
-    setTimeout(() => {
-      if (characterRef.current) {
-        characterRef.current.position.z -= 0.01;
-        characterRef.current.rotation.y = Math.atan2(0, -1);
-      }
-    }, 700);
-  }, []);
 
   return (
     <>
@@ -331,6 +346,7 @@ const Character = ({
         object={model} 
         scale={0.01} 
         position={[0, selectedCharacter.includes("AdamAnim.fbx") ? 0.3 : 0, 0]} 
+        dispose={null}
       />
       {/* Box di collisione (invisibile ma usato per i calcoli) */}
       <mesh

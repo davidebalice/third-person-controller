@@ -1,6 +1,6 @@
-import { PerspectiveCamera, Sky } from "@react-three/drei";
+import { PerspectiveCamera, Sky, useProgress } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import Character from "./Character";
 import City from "./City";
@@ -17,6 +17,16 @@ const Scene = ({ selectedCharacter, setSelectedCharacter }) => {
   const [info, setInfo] = useState(false);
   const [uiVisible, setUiVisible] = useState(true);
   const [cameraIndex, setCameraIndex] = useState(0);
+
+  const { progress } = useProgress();
+
+  useEffect(() => {
+    if (progress === 100) {
+      // Deferiamo il cambio di stato per evitare conflitti durante il render
+      const timer = setTimeout(() => setLoading(false), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [progress]);
 
   return (
     <>
@@ -39,18 +49,12 @@ const Scene = ({ selectedCharacter, setSelectedCharacter }) => {
           makeDefault
           ref={cameraRef}
         />
-        <Sky
-          distance={1000}
-          sunPosition={[100, 100, 100]}
-          turbidity={10}
-          rayleigh={1}
-          mieCoefficient={0.005}
-          mieDirectionalG={0.8}
-        />
-        <ambientLight intensity={1.5} />
+        <color attach="background" args={["#87CEEB"]} />
+        <ambientLight intensity={0.6} />
         <directionalLight position={[5, 10, 5]} intensity={1.0} castShadow />
 
         <Character
+          key={selectedCharacter}
           cameraRef={cameraRef}
           cameraPositions={cameraPositions}
           cameraIndex={cameraIndex}
@@ -59,7 +63,7 @@ const Scene = ({ selectedCharacter, setSelectedCharacter }) => {
           setAnimation={setAnimation}
           selectedCharacter={selectedCharacter}
         />
-        <City setLoading={setLoading} />
+        <City />
       </Canvas>
     </>
   );

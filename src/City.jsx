@@ -1,16 +1,8 @@
 import { Environment, useGLTF, useProgress } from "@react-three/drei";
 import React, { useEffect } from "react";
 
-export default function City({ setLoading }) {
+export default function City() {
   const city = useGLTF("./models/city.gltf");
-
-  const { progress } = useProgress();
-
-  useEffect(() => {
-    if (progress === 100) {
-      setLoading(false);
-    }
-  }, [progress]);
 
   return (
     <>
