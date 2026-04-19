@@ -1,4 +1,4 @@
-import { useFBX } from "@react-three/drei";
+import { useFBX, useTexture } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
@@ -16,7 +16,7 @@ const Character = ({
   const touchStartRef = useRef(null);
   const speed = 0.05;
   const [currentAction, setCurrentAction] = useState(null);
-  
+
   // Tracking dei tasti premuti con ref per evitare stale state
   const keysPressed = useRef({});
 
@@ -37,6 +37,8 @@ const Character = ({
   const kick2Anim = useFBX("/animations/kick2.fbx");
   const rollAnim = useFBX("/animations/roll.fbx");
   const flipAnim = useFBX("/animations/flip.fbx");
+
+  //
   //
   const mixerRef = useRef(null);
   const actionsRef = useRef({});
@@ -54,12 +56,63 @@ const Character = ({
     wireframe: true, // Per visualizzare la rete wireframe
   });
 
-  // Helper per slegare le animazioni dal prefisso mixamorig (rimuove mixamorig, mixamorig6, ecc.)
+  // Helper per slegare le animazioni dal prefisso mixamorig o altri rig generici
   const fixRigNames = (obj) => {
     if (!obj) return;
+
+    const boneMapping = {
+      "pelvis": "Hips",
+      "hips": "Hips",
+      "spine": "Spine",
+      "spine_01": "Spine",
+      "spine_02": "Spine1",
+      "spine_03": "Spine2",
+      "neck_01": "Neck",
+      "neck": "Neck",
+      "head": "Head",
+      "clavicle_l": "LeftShoulder",
+      "shoulder_l": "LeftShoulder",
+      "upperarm_l": "LeftArm",
+      "arm_l": "LeftArm",
+      "lowerarm_l": "LeftForeArm",
+      "forearm_l": "LeftForeArm",
+      "hand_l": "LeftHand",
+      "clavicle_r": "RightShoulder",
+      "shoulder_r": "RightShoulder",
+      "upperarm_r": "RightArm",
+      "arm_r": "RightArm",
+      "lowerarm_r": "RightForeArm",
+      "forearm_r": "RightForeArm",
+      "hand_r": "RightHand",
+      "thigh_l": "LeftUpLeg",
+      "upleg_l": "LeftUpLeg",
+      "calf_l": "LeftLeg",
+      "leg_l": "LeftLeg",
+      "foot_l": "LeftFoot",
+      "ball_l": "LeftToeBase",
+      "thigh_r": "RightUpLeg",
+      "upleg_r": "RightUpLeg",
+      "calf_r": "RightLeg",
+      "leg_r": "RightLeg",
+      "foot_r": "RightFoot",
+      "ball_r": "RightToeBase"
+    };
+
+    console.log("Rig Fix for Model:", obj.name || "Unnamed");
     obj.traverse((n) => {
+      // Alcuni modelli AI usano nodi normali al posto di 'Bone' reali
       if (n.name) {
-        n.name = n.name.replace(/^mixamorig\d*[:_]?/, "");
+        // Rimuove prefissi comuni (mixamorig, mixamorig6, FBXASC00x, Armature|, ecc.)
+        const oldName = n.name;
+        let newName = n.name.replace(/^(mixamorig\d*|FBXASC\d*|Armature|Character|node)[:_]?/i, "");
+
+        // Mappatura nomi generici più profonda
+        const mappedName = boneMapping[newName.toLowerCase()];
+        if (mappedName) newName = mappedName;
+
+        if (oldName !== newName) {
+          n.name = newName;
+        }
       }
     });
   };
@@ -77,6 +130,7 @@ const Character = ({
       }
     });
   };
+
 
   const fixAnimationClips = (clips) => {
     if (!clips) return;
@@ -99,7 +153,7 @@ const Character = ({
         characterRef.current.position.z = 0;
       }
 
-      // 2. Fix del Rig (Bones) - Solo se non già fatto sul modello in cache
+      // 2. Fix del Rig (Bones)
       if (!model.userData.rigFixed) {
         fixRigNames(model);
         refreshBinding(model);
@@ -110,8 +164,8 @@ const Character = ({
       model.traverse((n) => {
         if (n.name === "LeftArm") leftArmRef.current = n;
         if (n.name === "RightArm") rightArmRef.current = n;
-        
-        if (n.isMesh) {
+
+        if (n.isMesh || n.isSkinnedMesh) {
           n.castShadow = true;
           n.receiveShadow = true;
           n.frustumCulled = false;
@@ -120,7 +174,7 @@ const Character = ({
             n.material.transparent = false;
             n.material.opacity = 1;
             n.material.visible = true;
-            n.material.side = THREE.DoubleSide; 
+            n.material.side = THREE.DoubleSide;
 
             const isAdam = selectedCharacter.toLowerCase().includes("adamanim.fbx");
             if (isAdam) {
@@ -132,7 +186,7 @@ const Character = ({
             } else {
               n.material.roughness = Math.max(0.3, n.material.roughness * 0.8);
             }
-            
+
             // Texture cleanup
             const textureProps = ["map", "normalMap", "specularMap", "roughnessMap", "metalnessMap", "emissiveMap"];
             textureProps.forEach(prop => {
@@ -151,21 +205,21 @@ const Character = ({
         }
       });
 
-      // 4. Creazione Mixer e Binding Animazioni
-      // Pulizia mixer precedente se esistente
+      const mixerRoot = model;
+      
       if (mixerRef.current) {
         mixerRef.current.stopAllAction();
-        mixerRef.current.uncacheRoot(model);
+        mixerRef.current.uncacheRoot(mixerRoot);
       }
 
-      const mixer = new THREE.AnimationMixer(model);
+      const mixer = new THREE.AnimationMixer(mixerRoot);
       mixerRef.current = mixer;
 
       const animationFiles = {
-        idle: idleAnim, walk: walkAnim, greetings: greetingsAnim, 
-        dance: danceAnim, dance2: dance2Anim, run: runAnim, 
-        victory: victoryAnim, boxe: boxeAnim, guitar: guitarAnim, 
-        jump: jumpAnim, kick: kickAnim, kick2: kick2Anim, 
+        idle: idleAnim, walk: walkAnim, greetings: greetingsAnim,
+        dance: danceAnim, dance2: dance2Anim, run: runAnim,
+        victory: victoryAnim, boxe: boxeAnim, guitar: guitarAnim,
+        jump: jumpAnim, kick: kickAnim, kick2: kick2Anim,
         roll: rollAnim, flip: flipAnim
       };
 
@@ -180,13 +234,13 @@ const Character = ({
           if (selectedCharacter.includes("AdamAnim.fbx")) {
             clonedClip.tracks = clonedClip.tracks.filter(track => !/Thumb|Index|Middle|Ring|Pinky|Toe|LeftHand/i.test(track.name));
           }
-          
+
           fixAnimationClips([clonedClip]);
 
           const action = mixer.clipAction(clonedClip);
           newActions[name] = action;
 
-          // Tutte le animazioni ora sono in loop infinito su richiesta dell'utente
+          // Tutte le animazioni ora sono in loop infinito
           action.loop = THREE.LoopRepeat;
           action.clampWhenFinished = false;
         }
@@ -216,7 +270,7 @@ const Character = ({
       } else {
         setCurrentAction(action);
       }
-      velocity.current.set(0, 0, 0); 
+      velocity.current.set(0, 0, 0);
     }
   };
 
@@ -232,7 +286,7 @@ const Character = ({
       // Transizione rapida: fade out delle altre azioni
       Object.values(actionsRef.current).forEach((action) => {
         if (action !== currentAction && action.isRunning()) {
-          action.fadeOut(0.1); 
+          action.fadeOut(0.1);
         }
       });
 
@@ -241,7 +295,7 @@ const Character = ({
         .reset()
         .setEffectiveTimeScale(1)
         .setEffectiveWeight(1)
-        .fadeIn(0.1) 
+        .fadeIn(0.1)
         .play();
     }
   }, [currentAction]);
@@ -273,7 +327,7 @@ const Character = ({
     velocity.current.set(moveX, 0, moveZ);
 
     const currentPos = characterRef.current.position.clone();
-    
+
     // Check assex X
     if (moveX !== 0) {
       const nextX = currentPos.x + moveX;
@@ -304,7 +358,7 @@ const Character = ({
     if (moveX !== 0 || moveZ !== 0) {
       direction.current.set(moveX, 0, moveZ);
       characterRef.current.rotation.y = Math.atan2(moveX, moveZ);
-      
+
       // Se ci stiamo muovendo, interrompiamo eventuali animazioni speciali
       if (animation !== "") {
         setAnimation("");
@@ -341,11 +395,11 @@ const Character = ({
   return (
     <>
       {/* Character */}
-      <primitive 
-        ref={characterRef} 
-        object={model} 
-        scale={0.01} 
-        position={[0, selectedCharacter.includes("AdamAnim.fbx") ? 0.3 : 0, 0]} 
+      <primitive
+        ref={characterRef}
+        object={model}
+        scale={0.01}
+        position={[0, selectedCharacter.toLowerCase().includes("adam") ? 0.05 : 0, 0]}
         dispose={null}
       />
       {/* Box di collisione (invisibile ma usato per i calcoli) */}

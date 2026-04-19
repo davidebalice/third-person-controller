@@ -43,7 +43,7 @@ const Scene = ({ selectedCharacter, setSelectedCharacter }) => {
         selectedCharacter={selectedCharacter}
         setSelectedCharacter={setSelectedCharacter}
       />
-      <Canvas gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, outputColorSpace: THREE.SRGBColorSpace }}>
+      <Canvas shadows gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, outputColorSpace: THREE.SRGBColorSpace }}>
         <PerspectiveCamera
           position={[10, 4, 10]}
           makeDefault
@@ -51,7 +51,17 @@ const Scene = ({ selectedCharacter, setSelectedCharacter }) => {
         />
         <color attach="background" args={["#87CEEB"]} />
         <ambientLight intensity={0.6} />
-        <directionalLight position={[5, 10, 5]} intensity={1.0} castShadow />
+        <directionalLight 
+          position={[2, 12, 2]} 
+          intensity={1.0} 
+          castShadow 
+          shadow-mapSize={[2048, 2048]}
+          shadow-bias={-0.0005}
+          shadow-camera-left={-50}
+          shadow-camera-right={50}
+          shadow-camera-top={50}
+          shadow-camera-bottom={-50}
+        />
 
         <Character
           key={selectedCharacter}

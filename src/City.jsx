@@ -4,6 +4,17 @@ import React, { useEffect } from "react";
 export default function City() {
   const city = useGLTF("./models/city.gltf");
 
+  useEffect(() => {
+    if (city) {
+      city.scene.traverse((child) => {
+        if (child.isMesh) {
+          child.receiveShadow = true;
+          child.castShadow = true; 
+        }
+      });
+    }
+  }, [city]);
+
   return (
     <>
       <Environment preset="city" />
@@ -15,7 +26,6 @@ export default function City() {
         position-z={-1}
         scale={[0.15, 0.15, 0.15]}
         rotation={[0, 0, 0]}
-        castShadow
       ></primitive>
     </>
   );
