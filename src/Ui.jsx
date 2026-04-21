@@ -10,8 +10,8 @@ const Ui = ({ setCameraIndex, setAnimation, uiVisible, setUiVisible, selectedCha
   const characters = [
     { name: "ADAM", path: "/models/AdamAnim/AdamAnim.fbx", role: "WARRIOR", hp: "120", speed: "Medium", desc: "A powerful ancient warrior with great strength.", image: "/assets/adam.jpg" },
     { name: "GENERIC BOY", path: "/models/character.fbx", role: "ASSAULT", hp: "100", speed: "Fast", desc: "A balanced and reliable unit, perfect for standard operations.", image: "/assets/genericboy.jpg" },
-    { name: "???", path: "", role: "LOCKED", hp: "???", speed: "???", desc: "Coming soon...", image: "/assets/placeholder.png" },
-    { name: "???", path: "", role: "LOCKED", hp: "???", speed: "???", desc: "Coming soon...", image: "/assets/placeholder.png" },
+    { name: "EOLO", path: "/models/EoloAnim/Shoved Reaction With Spin.fbx", role: "WIND MASTER", hp: "110", speed: "Fast", desc: "A mystical entity with control over the winds.", image: "/assets/eolo.jpg" },
+    { name: "LUCKY", path: "/models/LuckyAnim/Breathing Idle.fbx", role: "HERO", hp: "105", speed: "Fast", desc: "A charismatic hero from Mixamo, known for his agility and luck.", image: "/assets/lucky.jpg" },
   ];
 
   //funzione che rileva se il dispositivo è touch
