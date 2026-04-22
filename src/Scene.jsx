@@ -18,15 +18,16 @@ const Scene = ({ selectedCharacter, setSelectedCharacter }) => {
   const [uiVisible, setUiVisible] = useState(true);
   const [cameraIndex, setCameraIndex] = useState(0);
 
-  const { progress } = useProgress();
+  const { progress, active } = useProgress();
 
   useEffect(() => {
-    if (progress === 100) {
-      // Deferiamo il cambio di stato per evitare conflitti durante il render
-      const timer = setTimeout(() => setLoading(false), 200);
+    if (progress === 100 && !active) {
+      const timer = setTimeout(() => setLoading(false), 500);
       return () => clearTimeout(timer);
+    } else {
+      setLoading(true);
     }
-  }, [progress]);
+  }, [progress, active, selectedCharacter]);
 
   return (
     <>

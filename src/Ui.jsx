@@ -106,7 +106,7 @@ const Ui = ({ setCameraIndex, setAnimation, uiVisible, setUiVisible, selectedCha
                       {isSelected && <div className="premium-card-badge">DEPLOYED</div>}
                     </div>
                     <div className="premium-card-content">
-                      <h3 className="premium-card-name" style={{ textAlign: 'center', marginBottom: '20px' }}>{char.name}</h3>
+                      <h3 className="premium-card-name">{char.name}</h3>
 
                       <button className="premium-select-btn">
                         {char.role === 'LOCKED' ? 'LOCKED' : (isSelected ? 'SELECTED' : 'SELECT')}

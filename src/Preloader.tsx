@@ -8,8 +8,11 @@ const Preloader = () => {
 
   return (
     <div className="preloader">
-      <img src={logo} className="logoPreloader" />
-      <div className="spinner"></div>
+      <div className="preloader-content">
+        <img src={logo} className="logoPreloader" />
+        <div className="spinner"></div>
+        <div className="progress-text">{Math.round(progress)}%</div>
+      </div>
     </div>
   );
 };
